@@ -70,14 +70,28 @@ def logout():
     logout_user()
     return jsonify({'message': 'Logged out successfully'}), 200
 
-@app.route('/google/auth')
-@login_required
-def google_auth():
-    flow = Flow.from_client_secrets_file(
-        'client_secrets.json',
+def _get_google_flow():
+    """Helper function to create a Google OAuth flow."""
+    client_config = {
+        "web": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "redirect_uris": [url_for('google_callback', _external=True)],
+        }
+    }
+    return Flow.from_client_config(
+        client_config,
         scopes=['https://www.googleapis.com/auth/gmail.modify'],
         redirect_uri=url_for('google_callback', _external=True)
     )
+
+@app.route('/google/auth')
+@login_required
+def google_auth():
+    flow = _get_google_flow()
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true'
@@ -89,11 +103,7 @@ def google_auth():
 @login_required
 def google_callback():
     state = session['state']
-    flow = Flow.from_client_secrets_file(
-        'client_secrets.json',
-        scopes=['https://www.googleapis.com/auth/gmail.modify'],
-        redirect_uri=url_for('google_callback', _external=True)
-    )
+    flow = _get_google_flow()
     flow.fetch_token(authorization_response=request.url)
 
     credentials = flow.credentials
@@ -106,14 +116,18 @@ def google_callback():
         db.session.add(account)
     db.session.commit()
 
-    return redirect("http://localhost:3000/dashboard") # Redirect to frontend dashboard
+    frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+    return redirect(f"{frontend_url}/dashboard")
 
 @app.route('/google/erase', methods=['POST'])
 @login_required
 def google_erase():
     # In a real app, this would be a background job
-    delete_old_emails(current_user.id)
-    return jsonify({'message': 'Email deletion process started.'}), 200
+    result = delete_old_emails(current_user.id)
+    if result['status'] == 'success':
+        return jsonify({'message': result['message']}), 200
+    else:
+        return jsonify({'error': result['message']}), 500
 
 
 if __name__ == '__main__':

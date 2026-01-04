@@ -1,0 +1,8 @@
+[
+  "digital-eraser/backend/test_app.py::test_google_erase",
+  "digital-eraser/backend/test_app.py::test_login",
+  "digital-eraser/backend/test_app.py::test_login_invalid_credentials",
+  "digital-eraser/backend/test_app.py::test_register",
+  "digital-eraser/backend/test_app.py::test_register_duplicate_user",
+  "digital-eraser/backend/test_app.py::test_status"
+]

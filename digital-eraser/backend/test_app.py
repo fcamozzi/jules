@@ -71,8 +71,8 @@ def test_google_erase(mock_delete_old_emails, client):
     client.post('/register', json={'username': 'testuser', 'password': 'testpassword'})
     client.post('/login', json={'username': 'testuser', 'password': 'testpassword'})
 
-    # Mock the delete_old_emails function to return True
-    mock_delete_old_emails.return_value = True
+    # Mock the delete_old_emails function to return a success dictionary
+    mock_delete_old_emails.return_value = {'status': 'success', 'message': 'Email deletion process started.'}
 
     # Call the /google/erase endpoint
     rv = client.post('/google/erase')
