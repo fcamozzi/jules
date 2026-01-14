@@ -3,8 +3,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json to leverage Docker cache
-COPY package*.json ./
+# Copy package.json
+COPY package.json ./
 
 # Install dependencies
 RUN npm install
@@ -15,12 +15,12 @@ COPY . .
 # Build the application
 RUN npm run build
 
-
 # Stage 2: Serve the application using Nginx
 FROM nginx:1.25-alpine
 
 # Copy the build output from the builder stage
-COPY --from=builder /app/build /usr/share/nginx/html
+# Vite builds to 'dist' by default
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy the custom Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
